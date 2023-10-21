@@ -1,0 +1,33 @@
+stages:
+  - dev
+  - master
+
+.build_dev: &build_dev |
+  docker-compose -f docker-compose-dev.yml up --build -d
+
+.build_master: &build_master |
+  docker-compose -f docker-compose-prod.yml up --build -d
+  
+
+dev:
+  stage: dev
+
+  script:
+    - echo "Before build"
+    - *build_dev
+  tags:
+    - dev
+  only:
+    - dev
+
+
+master:
+  stage: master
+
+  script:
+    - echo "Before build"
+    - *build_master
+  tags:
+    - master
+  only:
+    - master

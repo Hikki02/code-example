@@ -1,0 +1,64 @@
+version: '3.5'
+
+services:
+  db:
+    image: postgres:12-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env_dev
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    container_name: tengri_back
+
+  redis:
+    image: redis:latest
+    container_name: tengri_redis
+
+  web:
+    build: .
+    volumes:
+      - ./:/app/
+      - ./static:/app/static/
+      - ./media:/app/media/
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    container_name: tengri_web
+    env_file:
+      - .env_dev
+    command: python manage.py runserver 0.0.0.0:8000
+
+  celery:
+    build: .
+    volumes:
+      - ./:/app/
+    depends_on:
+      - db
+      - redis
+    container_name: tengri_celery
+    env_file:
+      - .env_dev
+    command: celery -A tengri worker --loglevel=info
+
+  celery-beat:
+    build: .
+    volumes:
+      - ./:/app/
+    depends_on:
+      - db
+      - redis
+    container_name: tengri_celery_beat
+    env_file:
+      - .env_dev
+    command: celery -A tengri beat --loglevel=info
+
+volumes:
+  postgres_data:
+#  lets:
